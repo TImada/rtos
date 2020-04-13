@@ -77,6 +77,32 @@ Solo5: solo5_exit(0) called
 ```
 
 #### Issues, workround, and etc ...
-- `printf()` and several functions in the Solo5/spt tender requires 64-bit data operations such as `\__aeabi_uldivmod()`. They are implemented in libaeabi32.
-- aarch32 gcc tries to use the TPIDRURO register rather than the TPIDRURW register for Thread Local Storage. This does not allow a user program to change the TPIDRURO register directly. So I employed the `-mtp=soft` option in MAKECONF\_CFLAGS so that gcc calls a user defined `\__aeabi_read_tp()` function to manipulate the TPIDRURW  register. `\__aeabi_read_tp()` is implemented in libaeabi32 too.
+- `printf()` and several functions in the Solo5/spt tender requires 64-bit data operations such as `__aeabi_uldivmod()`. They are implemented in libaeabi32.
+- aarch32 gcc tries to use the TPIDRURO register rather than the TPIDRURW register for Thread Local Storage. This does not allow a user program to change the TPIDRURO register directly. So I employed the `-mtp=soft` option in MAKECONF\_CFLAGS so that gcc calls a user defined `__aeabi_read_tp()` function to manipulate the TPIDRURW  register. `__aeabi_read_tp()` is implemented in libaeabi32 too.
 - aarch32 ld tries to parts of the spt tender program on memory address lower than 0x200000. This must be avoided because a \*.spt program should be located at such memory address. So I employed the `-Ttext-segment=0x40000000` option in HOSTLDFLAGS.
+- I encountered a gcc bug in test\_fpu.c by which the validity check of vector multiply result cannot work correctly. An additional inline assembly section with repeated nop instructions was inserted to avoid the bug.
+```
+#elif defined(__arm__)
+    /* We focus on only the first half of the array c[] */
+    float *addr = &c[0];
+    __asm__(
+        "ldr r0, %0\n"
+        "vld1.32 {d0}, [r0]\n"
+        "vld1.32 {d1}, [r0]\n"
+        "vmul.f32 d0, d1, d0\n"
+        "vst1.32 {d0}, [r0]\n"
+        : "=m" (addr)
+        : "m" (addr)
+        : "r0", "d0", "d1"
+    );
+    /* TODO: This is a workaround for arm-linux-gnueabihf-gcc */
+    int i;
+    for (i = 0; i < 6; i++) {
+        __asm__(
+            "nop\n"
+            :
+            :
+            :
+        );
+    }
+```
