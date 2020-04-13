@@ -57,29 +57,29 @@ $ cd /path/to/mirage-skeleton/tutorial/hello
 $ mirage configure -t spt
 $ make depend
 $ make
-$ solo5-spt ./hello.spt
+$ solo5-spt --mem=16 ./hello.spt
             |      ___|
   __|  _ \  |  _ \ __ \
 \__ \ (   | | (   |  ) |
 ____/\___/ _|\___/____/
 Solo5: Bindings version v0.6.4-7-g0868bac
-Solo5: Memory map: 512 MB addressable:
+Solo5: Memory map: 16 MB addressable:
 Solo5:   reserved @ (0x0 - 0xfffff)
 Solo5:       text @ (0x100000 - 0x191fff)
 Solo5:     rodata @ (0x192000 - 0x1b4fff)
 Solo5:       data @ (0x1b5000 - 0x21cfff)
-Solo5:       heap >= 0x21d000 < stack < 0x20000000
-2020-04-13 14:31:09 -00:00: INF [application] hello
-2020-04-13 14:31:10 -00:00: INF [application] hello
-2020-04-13 14:31:11 -00:00: INF [application] hello
-2020-04-13 14:31:12 -00:00: INF [application] hello
+Solo5:       heap >= 0x21d000 < stack < 0x1000000
+2020-04-13 15:37:03 -00:00: INF [application] hello
+2020-04-13 15:37:04 -00:00: INF [application] hello
+2020-04-13 15:37:05 -00:00: INF [application] hello
+2020-04-13 15:37:06 -00:00: INF [application] hello
 Solo5: solo5_exit(0) called
 ```
 
 #### Issues, workround, and etc ...
 - `printf()` and some other functions require 64-bit data operations such as `__aeabi_uldivmod()`. They are implemented in libaeabi32.
 - aarch32 gcc tries to use the TPIDRURO register rather than the TPIDRURW register for Thread Local Storage. This does not allow a user program to change the TPIDRURO register directly. So I employed the `-mtp=soft` option in MAKECONF\_CFLAGS so that gcc calls a user defined `__aeabi_read_tp()` function to manipulate the TPIDRURW  register. `__aeabi_read_tp()` is implemented in libaeabi32 too.
-- aarch32 ld tries to parts of the spt tender program on memory address lower than 0x200000. This must be avoided because a \*.spt program should be located at such memory address. So I employed the `-Ttext-segment=0x40000000` option in HOSTLDFLAGS.
+- aarch32 ld tries to locate parts of the spt tender program on memory address lower than 0x200000. This must be avoided because a \*.spt program should be located at such memory address. So I employed the `-Ttext-segment=0x40000000` option in HOSTLDFLAGS.
 - I encountered a gcc bug in test\_fpu.c by which the validity check of vector multiply result cannot work correctly. An additional inline assembly section with repeated nop instructions was inserted to avoid the bug.
 ```
 #elif defined(__arm__)
