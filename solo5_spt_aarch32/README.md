@@ -42,15 +42,8 @@ $ opam pin ocaml-freestanding /path/to/ocaml-freestanding
 (mirage-solo5 pinning)
 $ opam pin mirage-solo5 /path/to/mirage-solo5
 ```
-6. Download and install libaeabi32
-```
-$ git clone https://github.com/TImada/libaeabi32
-$ cd libaeabi32
-$ make
-$ sudo make install
-(libaeabi32.a will be installed on /usr/lib)
-```
-7. Try Hello Mirage World!
+
+6. Try Hello Mirage World!
 ```
 $ git clone https://github.com/mirage/mirage-skeleton
 $ cd /path/to/mirage-skeleton/tutorial/hello
@@ -76,9 +69,23 @@ Solo5:       heap >= 0x21d000 < stack < 0x1000000
 Solo5: solo5_exit(0) called
 ```
 
-#### Issues, workround, and etc ...
-- `printf()` and some other functions require arithmetic operations such as `__aeabi_uldivmod()`. They are implemented in libaeabi32.
-- aarch32 gcc tries to use the TPIDRURO register rather than the TPIDRURW register for Thread Local Storage. This does not allow a user program to change the TPIDRURO register directly. So I employed the `-mtp=soft` option in MAKECONF\_CFLAGS so that gcc calls a user defined `__aeabi_read_tp()` function to manipulate the TPIDRURW  register. `__aeabi_read_tp()` is implemented in libaeabi32 too.
+#### Remarkable changes
+- solo5-bindings-spt
+  - added a library named `libaeabi` which provides `__aeabi_**` builtin functions(this library can be found in `./lib/aeabi/`)
+  - introduced `__arm__` macro to specify 32-bit ARM architecture
+  - introduced `__BITS_32__` and `__BITS_64__` to represent 32 or 64 bits architecture
+  - bindings/mem.c was converted to mem32.c and mem64.c to handle 32/64-bit architecture
+  - tenders/common/elf.c was converted to elf32.c and elf64.c to handle 32/64-bit architecture
+  - added bindings/cpu\_arm.h
+  - added bindings/spt/sys\_linux\_arm.c
+- ocaml-freestanding
+  - added config.in/Makefile.Linux.arm and config.in/m.arm.h
+- mirage-solo5
+ - nothing especially
+
+#### Issues, workaround, and etc ...
+- `printf()` and some other functions require arithmetic operations such as `__aeabi_uldivmod()`. They are implemented in libaeabi.
+- aarch32 gcc tries to use the TPIDRURO register rather than the TPIDRURW register for Thread Local Storage. This does not allow a user program to change the TPIDRURO register directly. So I employed the `-mtp=soft` option in MAKECONF\_CFLAGS so that gcc calls a user defined `__aeabi_read_tp()` function to manipulate the TPIDRURW  register. `__aeabi_read_tp()` is implemented in libaeabi too.
 - aarch32 ld tries to locate parts of the spt tender program on memory address lower than 0x200000. This must be avoided because a \*.spt program should be located at such memory address. So I employed the `-Ttext-segment=0x40000000` option in HOSTLDFLAGS.
 - I encountered a gcc bug in test\_fpu.c by which the validity check of vector multiply result cannot work correctly. An additional inline assembly section with repeated nop instructions was inserted to avoid the bug.
 ```
