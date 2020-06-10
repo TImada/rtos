@@ -71,7 +71,7 @@ Solo5: solo5_exit(0) called
 
 #### Remarkable changes
 - solo5-bindings-spt
-  - added a library named `libaeabi` which provides `__aeabi_**` builtin functions(this library can be found in `./lib/aeabi/`)
+  - added a library named `libaeabi` which provides `__aeabi_**` builtin functions(this library can be found in `./lib32/aeabi/`)
   - introduced `__arm__` macro to specify 32-bit ARM architecture
   - introduced `__BITS_32__` and `__BITS_64__` to represent 32 or 64 bits architecture
   - bindings/mem.c was converted to mem32.c and mem64.c to handle 32/64-bit architecture
@@ -81,7 +81,7 @@ Solo5: solo5_exit(0) called
 - ocaml-freestanding
   - added config.in/Makefile.Linux.arm and config.in/m.arm.h
 - mirage-solo5
- - nothing especially
+  - nothing especially
 
 #### Issues, workaround, and etc ...
 - `printf()` and some other functions require arithmetic operations such as `__aeabi_uldivmod()`. They are implemented in libaeabi.
